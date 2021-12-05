@@ -56,6 +56,7 @@ counter bin = ( mostCommon bin 1 , mostCommon bin 0 )
 ------------------------------------------------------------------------------------------
 -- Part two
 ------------------------------------------------------------------------------------------
+
 partTwo :: IO Int 
 partTwo = do 
     xs <- getTxtContent 
@@ -78,11 +79,11 @@ filterBinaries str n bin = filterBinaries str (n+1) newBins
 
 bitChoice :: String -> (Int,Int) -> Int
 bitChoice st (x,y)  
-    | (msc && xL) = 1
-    | (lsc && yL) = 1
-    | (msc && yL) = 0
-    | (lsc && xL) = 0
-    | otherwise   = error "String incorrect, type 'msc' or 'lsc'."
+    | msc && xL = 1
+    | lsc && yL = 1
+    | msc && yL = 0
+    | lsc && xL = 0
+    | otherwise = error "String incorrect, type 'msc' or 'lsc'."
     where 
         (msc, lsc) = ( st == "msc" , st == "lsc" )
         (xL, yL)   = (  x >= y     ,  x <  y )
