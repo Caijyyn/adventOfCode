@@ -1,0 +1,32 @@
+
+
+
+
+
+
+overlappingLines :: [Vector] -> Int 
+overlappingLines tpls = (length $ findIntersections tpls)
+
+findIntersections :: [Vector] -> [Int]
+findIntersections tpls = nub $ concat $ intersections
+    where 
+        intersections = checkIntersections xss yss
+        (xss,yss) = (createLines xs, createLines ys)
+        (xs,ys) = unzip tpls
+
+checkIntersections :: [[Int]] -> [[Int]] -> [[Int]]
+checkIntersections xLists yLists = checkIt xLists yLists
+    where 
+        checkIt :: [[Int]] -> [[Int]] -> [[Int]]
+        checkIt []       yss      = []
+        checkIt (xs:xss) []       = checkIntersections xss yLists
+        checkIt (xs:xss) (ys:yss) = xs `intersect` ys : checkIntersections (xs:xss) yss
+
+
+
+
+
+
+
+
+

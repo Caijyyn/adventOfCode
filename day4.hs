@@ -96,9 +96,9 @@ deleteAtIndex :: [Sheet] -> [Bool] -> [Sheet]
 deleteAtIndex sheets bingo = newSheets
     where 
         (idx, newSheets) = unzip [(a,b) | (a,b) <- zipped, a `notElem` is]
-        zipped = indexes `zip` sheets
-        indexes = take (length bingo) [0..]
-        is = elemIndices True bingo
+        zipped           = indexes `zip` sheets
+        indexes          = take (length bingo) [0..]
+        is               = elemIndices True bingo
 
 ------------------------------------------------------------------------------------------
 -- TESTS
