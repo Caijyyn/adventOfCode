@@ -5,6 +5,7 @@ import Data.List.Split (splitOn, chunksOf)
 import Data.List (intersect, sort, nub, transpose)
 
 type Vector = (Int, Int)
+type Force  = (Vector, Vector)
 type Matrix = [[Int]]
 data Vectors = V (Int,Int) deriving (Eq, Ord, Show)
 
@@ -114,7 +115,7 @@ tt = [  ["0,9"], ["->"], ["5,9"],
         ["5,5"], ["->"], ["8,2"]]
 
 t1 = findIntersections $ map (\v -> V v) $ horisontalAndVertical $ stringBreaker tt
--- t2 = countOverlapping $ drawLines t1 $ buildMatrix 10
+t2 = plotMatrix $ drawLines (horisontalAndVertical $ stringBreaker tt) $ buildMatrix 10
 
 
 ------------------------------------------------------------------------------------------
