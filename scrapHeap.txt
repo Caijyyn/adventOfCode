@@ -23,9 +23,69 @@ checkIntersections xLists yLists = checkIt xLists yLists
         checkIt (xs:xss) (ys:yss) = xs `intersect` ys : checkIntersections (xs:xss) yss
 
 
+-- Dessa tre fungerar, men extremt långsamma ----------------
+findIntersections :: [Vectors] -> [Vectors]
+findIntersections [] = []
+findIntersections (ve:ctors)    | ve `elem` ctors   = ve : findIntersections ctors
+                                | otherwise         = findIntersections ctors
+
+countOverlapping' :: [Vectors] -> Integer 
+countOverlapping' [] = 0
+countOverlapping' (v:ector) | v `elem` ector = 1 + countOverlapping' ector 
+                            | otherwise      = countOverlapping' ector
+
+countOverlapping :: Matrix -> Int
+countOverlapping matrix = sum $ map length [filter (\x -> x > 1) rows | rows <- matrix]
+--------------------------------------------------------------
+
+drawLines :: [Vector] -> Matrix -> Matrix
+drawLines []                matrix = matrix
+drawLines ((xs,ys):vectors) matrix = drawLines vectors mmx
+    where 
+        mmx = [[e | (y,e) <- l] | (x,l) <- mx]
+        mx = [if y == ys then (y,[if x == xs then (x,el + 1) else e 
+                | e@(x,el) <- ls]) else l | l@(y, ls) <- numbered]
+        numbered = id `zip` [ id `zip` list | list <- matrix]
+        id = [0..]
+
+horisontalAndVertical :: [Vector] -> [Vector]
+horisontalAndVertical vector = sort $ concat $ pairIt list
+    where 
+        list = (xs `zip` ys)
+        (xs, ys) = (createLines x, createLines y)
+        (x, y) = unzip vector
+
+        pairIt :: [([Int], [Int])] -> [[Vector]]
+        pairIt [] = []
+        pairIt ((vx,vy):ector) 
+            | x == 1    = (replicate y $ head vx) `zip` vy : pairIt ector
+            | y == 1    = vx `zip` (replicate x $ head vy) : pairIt ector
+            | otherwise = pairIt ector
+            where (x,y) = (length vx, length vy) 
+
+createLines :: [Int] -> [[Int]]
+createLines [] = [] 
+createLines (x:y:xs) 
+    | x > y     = [y..x] : createLines xs
+    | x < y     = [x..y] : createLines xs
+    | otherwise = [x] : createLines xs
 
 
 
+t1 = findIntersections $ map (\v -> V v) $ horisontalAndVertical $ stringBreaker tt
+t2 = plotMatrix $ drawLines (horisontalAndVertical $ stringBreaker tt) $ buildMatrix 10
+
+
+
+
+
+------------------------------------------------------------
+
+separateLefties :: String -> (String , String) -> (String , String)
+separateLefties [] ( lefties , righties ) = ( lefties , righties ) 
+separateLefties (r:raw) ( lefties , righties ) 
+    | brackets r  = separateLefties raw ( (r:lefties) , righties ) 
+    | otherwise   = separateLefties raw ( lefties , (r:righties) )
 
 
 

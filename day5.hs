@@ -2,86 +2,83 @@
 module Day5 where
 
 import Data.List.Split (splitOn, chunksOf)
-import Data.List (intersect, sort, nub, transpose)
+import Data.List (intersect, sort, nub, group)
 
 type Vector = (Int, Int)
 type Force  = (Vector, Vector)
 type Matrix = [[Int]]
-data Vectors = V (Int,Int) deriving (Eq, Ord, Show)
 
 ------------------------------------------------------------------------------------------
 -- Day 5: Hydrothermal Venture
 ------------------------------------------------------------------------------------------
-getTxtContent :: IO [Vector] 
+getTxtContent :: IO [Force] 
 getTxtContent = do
     strs <- map lines . words <$> readFile "day5inp.txt"
-    let str = stringBreaker strs
+    let str = sort $ stringBreaker strs
     return str
 
-stringBreaker :: [[String]] -> [Vector]
-stringBreaker strings = map (\[x,y] -> (x,y)) xss
+stringBreaker :: [[String]] -> [Force]
+stringBreaker strings = [ (a,b) | [a,b] <- forces]
     where 
+        forces = chunksOf 2 $ map (\[x,y] -> (x,y)) xss
         xss = [map (read :: String -> Int) s | s <- st]
         st  = map (\x -> splitOn "," x) str
         str = filter (\x -> x /= "->") $ map head strings
 
 ------------------------------------------------------------------------------------------
--- Part one  -- FUNGERAR INTE, FYLLER UPP MINNE OCH KLARAR INTE AV ATT EXEKVERA GILTIG LÖSNING
+-- Part one  -- 
 ------------------------------------------------------------------------------------------
-partOne :: IO Int {- [Vectors] -}
+partOne :: IO Int
 partOne = do 
     tpls <- getTxtContent 
-    let vectors = horisontalAndVertical tpls 
-    let matrix = drawLines vectors $ buildMatrix 1000
-    let x = countOverlapping matrix 
+    let forces = filterOutVerticalAndHorisontal tpls
+    let x = length.filter (\x -> length x > 1) $ (group.sort.concat.drawStraightLines) forces
     return x
 
--- Dessa tre fungerar, men extremt långsamma ----------------
-findIntersections :: [Vectors] -> [Vectors]
-findIntersections [] = []
-findIntersections (ve:ctors)    | ve `elem` ctors   = ve : findIntersections ctors
-                                | otherwise         = findIntersections ctors
+filterOutVerticalAndHorisontal :: [Force] -> [Force] 
+filterOutVerticalAndHorisontal forces = 
+    (sort.filter (\((x1,y1),(x2,y2)) -> (x1 == x2) || (y1 == y2))) forces
 
-countOverlapping' :: [Vectors] -> Integer 
-countOverlapping' [] = 0
-countOverlapping' (v:ector) | v `elem` ector = 1 + countOverlapping' ector 
-                            | otherwise      = countOverlapping' ector
+drawStraightLines :: [Force] -> [[Vector]]
+drawStraightLines [] = []
+drawStraightLines (((x1,y1),(x2,y2)):fs) 
+    | x1 == x2  = [(x1,y) | y <- (list y1 y2)] : drawStraightLines fs
+    | y1 == y2  = [(x,y1) | x <- (list x1 x2)] : drawStraightLines fs
+    | otherwise = drawStraightLines fs
 
-countOverlapping :: Matrix -> Int
-countOverlapping matrix = sum $ map length [filter (\x -> x > 1) rows | rows <- matrix]
---------------------------------------------------------------
+list :: Int -> Int -> [Int]
+list i1 i2  | i1 <  i2 = [i1..i2]
+            | i1 >= i2 = [i2..i1]
 
-drawLines :: [Vector] -> Matrix -> Matrix
-drawLines []                matrix = matrix
-drawLines ((xs,ys):vectors) matrix = drawLines vectors mmx
-    where 
-        mmx = [[e | (y,e) <- l] | (x,l) <- mx]
-        mx = [if y == ys then (y,[if x == xs then (x,el + 1) else e 
-                | e@(x,el) <- ls]) else l | l@(y, ls) <- numbered]
-        numbered = id `zip` [ id `zip` list | list <- matrix]
-        id = [0..]
+------------------------------------------------------------------------------------------
+-- Part two
+------------------------------------------------------------------------------------------
+partTwo :: IO Int 
+partTwo = do 
+    forces <- getTxtContent
+    let vs1 = (drawStraightLines . filterOutVerticalAndHorisontal) forces 
+    let vs2 = (drawDiagonal . filterDiagonals) forces 
+    let x = length.filter (\x -> length x > 1) $ (group.sort.concat) $ vs1 ++ vs2
+    return x
 
-horisontalAndVertical :: [Vector] -> [Vector]
-horisontalAndVertical vector = sort $ concat $ pairIt list
-    where 
-        list = (xs `zip` ys)
-        (xs, ys) = (createLines x, createLines y)
-        (x, y) = unzip vector
+filterDiagonals :: [Force] -> [Force]
+filterDiagonals forces = 
+    (sort.filter (\((x1,y1),(x2,y2)) -> (x1 /= x2) && (y1 /= y2))) forces
 
-        pairIt :: [([Int], [Int])] -> [[Vector]]
-        pairIt [] = []
-        pairIt ((vx,vy):ector) 
-            | x == 1    = (replicate y $ head vx) `zip` vy : pairIt ector
-            | y == 1    = vx `zip` (replicate x $ head vy) : pairIt ector
-            | otherwise = pairIt ector
-            where (x,y) = (length vx, length vy) 
+drawDiagonal :: [Force] -> [[Vector]]
+drawDiagonal []                     = []
+drawDiagonal (f:fs) = direction f : drawDiagonal fs
 
-createLines :: [Int] -> [[Int]]
-createLines [] = [] 
-createLines (x:y:xs) 
-    | x > y     = [y..x] : createLines xs
-    | x < y     = [x..y] : createLines xs
-    | otherwise = [x] : createLines xs
+direction :: Force -> [Vector] 
+direction ((x1,y1),(x2,y2)) 
+    | x1 > x2 && y1 < y2 = [x1, x1-1 .. x2] `zip` [y1 .. y2]
+    | x1 < x2 && y1 > y2 = [x1 .. x2] `zip` [y1, y1-1 .. y2] 
+    | otherwise          = list x1 x2 `zip` list y1 y2
+
+
+------------------------------------------------------------------------------------------
+-- Helpers
+------------------------------------------------------------------------------------------
 
 buildMatrix :: Int -> Matrix
 buildMatrix n = replicate n $ replicate n 0
@@ -95,9 +92,9 @@ plotMatrix matrix = putStr $ concat $ map (\x -> x ++ "\n") str
         unClutter :: Char -> Bool 
         unClutter c = (c /= ',') && (c /= '[') && (c /= ']')
 
-------------------------------------------------------------------------------------------
--- Part two
-------------------------------------------------------------------------------------------
+allPoints :: Int -> [Vector] 
+allPoints n = [(x,y) | x <- list, y <- list]
+    where list = [0 .. abs n]
 
 
 ------------------------------------------------------------------------------------------
@@ -114,8 +111,9 @@ tt = [  ["0,9"], ["->"], ["5,9"],
         ["0,0"], ["->"], ["8,8"],
         ["5,5"], ["->"], ["8,2"]]
 
-t1 = findIntersections $ map (\v -> V v) $ horisontalAndVertical $ stringBreaker tt
-t2 = plotMatrix $ drawLines (horisontalAndVertical $ stringBreaker tt) $ buildMatrix 10
+ttt = allPoints 9
+
+t1 = length.filter (\x -> length x > 1) $ (group.sort.concat.drawStraightLines.filterOutVerticalAndHorisontal.stringBreaker) tt
 
 
 ------------------------------------------------------------------------------------------
