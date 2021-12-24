@@ -3,7 +3,8 @@ module Matrix
     ( Point
     , assign2DCoordinates 
     , get2Delem
-    , remove2DPoint) where 
+    , remove2DPoint
+    , get2DMatrixSize) where 
 
 
 ------------------------------------------------------------------------------------------
@@ -30,6 +31,11 @@ remove2DPoint = map (snd.unzip)
 -- | Fetches an element from a 2D-matrix
 get2Delem :: Point -> [[a]] -> a
 get2Delem p@(row,col) matrix | sizeInvariant p matrix = (matrix !! row) !! col
+
+-- | Returns the size of the matrix in a tuple. 
+-- | WARNING: It needs to be symmetric for this function to work.
+get2DMatrixSize :: [[a]] -> (Int , Int)
+get2DMatrixSize mx = (length mx , (length.head) mx)
 
 -- | Will make sure the arguments stays within the borders of any given matrix
 sizeInvariant :: Point -> [[a]] -> Bool 
