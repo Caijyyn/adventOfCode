@@ -3,9 +3,7 @@ module Day11 where
 
 import Matrix
 
-type Line = [(Point, Int)]
 type Grid = [[(Point, Int)]]
-type GridOrLine = Either Grid Line
 ------------------------------------------------------------------------------------------
 -- Day 11: Dumbo Octopus
 ------------------------------------------------------------------------------------------
